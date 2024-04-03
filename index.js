@@ -10,6 +10,10 @@ canvas.height = 576
 // creating main canvas
 c.fillRect(0, 0 ,canvas.width, canvas.height)
 
+// gravity force
+const gravity = 0.2
+
+// sprite class
 class Sprite {
     constructor({position, velocity, size}) {
         this.position = position
@@ -26,11 +30,18 @@ class Sprite {
     // update sprite e.g related to gravity etc.
     update() {
         this.draw()
-        if (this.position.y >= canvas.height - this.size.height) {
-            this.position.y = canvas.height - this.size.height
+
+        // update position
+        this.position.y += this.velocity.y
+        this.position.x += this.velocity.x
+
+        // checking canvas border related to y-axis
+        if (this.position.y + this.size.height >= canvas.height) {
+            this.velocity.y = 0
         } else {
-            this.position.y += this.velocity.y
+            this.velocity.y += gravity
         }
+
     }
 
 }
@@ -43,7 +54,7 @@ const player = new Sprite({
     },
     velocity: {
         x: 0,
-        y: 10
+        y: 0
     },
     size : {
         width: 50,
@@ -51,6 +62,7 @@ const player = new Sprite({
     }
 })
 
+// instantiate enemy
 const enemy = new Sprite({
     position: {
         x: 400,
@@ -58,7 +70,7 @@ const enemy = new Sprite({
     },
     velocity: {
         x: 0,
-        y: 5
+        y: 0
     },
     size : {
         width: 50,
@@ -76,6 +88,61 @@ const animate = () => {
     c.fillRect(0, 0, canvas.width, canvas.height)
     player.update()
     enemy.update()
+
+    // movement part in animation loop
+    if (keys.a.pressed && lastKey === "a") {
+        player.velocity.x = -1
+    } else if (keys.d.pressed && lastKey === "d") {
+        player.velocity.x = 1
+    } else {
+        player.velocity.x = 0
+    }
 }
 
+
+// checking for keys that are pressed to provide exact movement without keys interrupting each other
+    // initial all keys have to be false related to pressed
+const keys = {
+    a: {
+        pressed: false
+    },
+    d: {
+        pressed: false
+    }
+}
+// includes last pressed key
+let lastKey = undefined
+
+
+
+// checking if any button is pressed ("keydown")
+window.addEventListener("keydown", (event) => {
+    switch (event.key) {
+        case "a":
+            keys.a.pressed = true
+            lastKey = "a"
+            break
+        case "d":
+            keys.d.pressed = true
+            lastKey = "d"
+            break
+    }
+    console.log(event.key)
+})
+
+// checking if any specific button is not pressed
+window.addEventListener("keyup", (event) => {
+    switch (event.key) {
+        case "a":
+            keys.a.pressed = false
+            break
+        case "d":
+            keys.d.pressed = false
+            break
+    }
+    console.log(event.key)
+})
+
+
+// starting animation
 animate()
