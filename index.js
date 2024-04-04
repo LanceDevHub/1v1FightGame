@@ -42,6 +42,17 @@ class Sprite {
         } else {
             this.velocity.y += gravity
         }
+        // checking canvas border related to x-axis right side
+        if (this.position.x + this.size.width > canvas.width) {
+            this.velocity.x = 0
+            this.position.x = canvas.width - this.size.width
+        }
+            // left side
+        if (this.position.x <= 0) {
+            this.velocity.x = 0
+            this.position.x = 0
+        }
+
 
     }
 
@@ -95,9 +106,9 @@ const animate = () => {
     // MOVEMENT-PART in animation loop
         // left right movement
     if (keys.a.pressed && lastKey === "a") {
-        player.velocity.x = -2
+        player.velocity.x = -4
     } else if (keys.d.pressed && lastKey === "d") {
-        player.velocity.x = 2
+        player.velocity.x = 4
     } else {
         player.velocity.x = 0
     }
