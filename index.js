@@ -36,8 +36,9 @@ class Sprite {
         this.position.x += this.velocity.x
 
         // checking canvas border related to y-axis
-        if (this.position.y + this.size.height >= canvas.height) {
+        if (this.position.y + this.size.height > canvas.height) {
             this.velocity.y = 0
+            this.position.y = canvas.height - this.size.height
         } else {
             this.velocity.y += gravity
         }
@@ -89,33 +90,57 @@ const animate = () => {
     player.update()
     enemy.update()
 
-    // movement part in animation loop
+    doubleJumpTimer += 1
+
+    // MOVEMENT-PART in animation loop
+        // left right movement
     if (keys.a.pressed && lastKey === "a") {
-        player.velocity.x = -1
+        player.velocity.x = -2
     } else if (keys.d.pressed && lastKey === "d") {
-        player.velocity.x = 1
+        player.velocity.x = 2
     } else {
         player.velocity.x = 0
     }
+        // jump movement
+            // initial jump
+    if (keys.w.pressed && player.position.y + player.size.height === canvas.height){
+        player.velocity.y = -5
+        doubleJumpTimer = 0
+        jumpCount += 1
+    }
+            // double jump
+    if (keys.w.pressed && (player.position.y + player.size.height) !== canvas.height && jumpCount === 1 && doubleJumpTimer >= 20) {
+        player.velocity.y = -5
+        jumpCount = 0
+    }
+    console.log(doubleJumpTimer)
+
 }
 
+// KEY-INPUTS
 
-// checking for keys that are pressed to provide exact movement without keys interrupting each other
-    // initial all keys have to be false related to pressed
+    // checking for keys that are pressed to provide exact movement without keys interrupting each other
+        // initial all keys have to be false related to pressed
 const keys = {
     a: {
         pressed: false
     },
     d: {
         pressed: false
+    },
+    w: {
+        pressed: false
     }
 }
-// includes last pressed key
+    // includes last pressed key
 let lastKey = undefined
+    // essential for double jump
+let jumpCount = 0
+let doubleJumpTimer = 0
 
 
 
-// checking if any button is pressed ("keydown")
+    // checking if any button is pressed ("keydown")
 window.addEventListener("keydown", (event) => {
     switch (event.key) {
         case "a":
@@ -126,11 +151,14 @@ window.addEventListener("keydown", (event) => {
             keys.d.pressed = true
             lastKey = "d"
             break
+        case "w":
+            keys.w.pressed = true
+            break
     }
     console.log(event.key)
 })
 
-// checking if any specific button is not pressed
+    // checking if any specific button is not pressed
 window.addEventListener("keyup", (event) => {
     switch (event.key) {
         case "a":
@@ -139,9 +167,13 @@ window.addEventListener("keyup", (event) => {
         case "d":
             keys.d.pressed = false
             break
+        case "w":
+            keys.w.pressed = false
+            break
     }
     console.log(event.key)
 })
+
 
 
 // starting animation
