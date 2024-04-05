@@ -1,3 +1,3 @@
 # 1v1FightGame
 
-timestamp at 40:12
+timestamp at 1:03:00

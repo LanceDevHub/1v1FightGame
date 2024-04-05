@@ -15,16 +15,37 @@ const gravity = 0.2
 
 // sprite class
 class Sprite {
-    constructor({position, velocity, size}) {
+    constructor({position, velocity, size, color = "red"}) {
         this.position = position
         this.velocity = velocity
         this.size = size
+        // needed for left right smooth left/right movement
+        this.lastKey = undefined
+        // needed for double jump mechanic
+        this.jumpCount = 0
+        this.doubleJumpTimer = 0
+        // needed for attacking
+        this.attackBox = {
+            position: this.position,
+            width: 100,
+            height: 50
+        }
+        this.isAttacking = false
+        // object body color
+        this.color = color
     }
 
     // draw sprite
     draw() {
-        c.fillStyle = "red"
+        // body
+        c.fillStyle = this.color
         c.fillRect(this.position.x, this.position.y, this.size.width, this.size.height)
+
+        // attack box
+        if (this.isAttacking) {
+            c.fillStyle = "green"
+            c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height)
+        }
     }
 
     // update sprite e.g related to gravity etc.
@@ -42,18 +63,22 @@ class Sprite {
         } else {
             this.velocity.y += gravity
         }
-        // checking canvas border related to x-axis right side
+        // checking canvas border related to x-axis right-side
         if (this.position.x + this.size.width > canvas.width) {
             this.velocity.x = 0
             this.position.x = canvas.width - this.size.width
         }
-            // left side
+            // left-side
         if (this.position.x <= 0) {
             this.velocity.x = 0
             this.position.x = 0
         }
-
-
+    }
+    attack() {
+        this.isAttacking = true
+        setTimeout(() => {
+            this.isAttacking = false
+        }, 100)
     }
 
 }
@@ -87,7 +112,8 @@ const enemy = new Sprite({
     size : {
         width: 50,
         height: 150
-    }
+    },
+    color: "blue"
 })
 
 console.log(player)
@@ -101,30 +127,67 @@ const animate = () => {
     player.update()
     enemy.update()
 
-    doubleJumpTimer += 1
+    player.doubleJumpTimer += 1
+    enemy.doubleJumpTimer += 1
 
     // MOVEMENT-PART in animation loop
+    // PLAYER
         // left right movement
-    if (keys.a.pressed && lastKey === "a") {
+    if (keys.a.pressed && player.lastKey === "a") {
         player.velocity.x = -4
-    } else if (keys.d.pressed && lastKey === "d") {
+    } else if (keys.d.pressed && player.lastKey === "d") {
         player.velocity.x = 4
     } else {
         player.velocity.x = 0
     }
-        // jump movement
+    // ENEMY
+        // left right movement
+    if (keys.ArrowLeft.pressed && enemy.lastKey === "ArrowLeft") {
+        enemy.velocity.x = -4
+    } else if (keys.ArrowRight.pressed && enemy.lastKey === "ArrowRight") {
+        enemy.velocity.x = 4
+    } else {
+        enemy.velocity.x = 0
+    }
+
+    // JUMP-PART in animation loop
+    // PLAYER
             // initial jump
     if (keys.w.pressed && player.position.y + player.size.height === canvas.height){
         player.velocity.y = -5
-        doubleJumpTimer = 0
-        jumpCount += 1
+        player.doubleJumpTimer = 0
+        player.jumpCount += 1
     }
             // double jump
-    if (keys.w.pressed && (player.position.y + player.size.height) !== canvas.height && jumpCount === 1 && doubleJumpTimer >= 20) {
+    if (keys.w.pressed && (player.position.y + player.size.height) !== canvas.height && player.jumpCount === 1 && player.doubleJumpTimer >= 20) {
         player.velocity.y = -5
-        jumpCount = 0
+        player.jumpCount = 0
     }
-    console.log(doubleJumpTimer)
+    // ENEMY
+        // initial jump
+    if (keys.ArrowUp.pressed && enemy.position.y + enemy.size.height === canvas.height){
+        enemy.velocity.y = -5
+        enemy.doubleJumpTimer = 0
+        enemy.jumpCount += 1
+    }
+        // double jump
+    if (keys.ArrowUp.pressed && (enemy.position.y + enemy.size.height) !== canvas.height && enemy.jumpCount === 1 && enemy.doubleJumpTimer >= 20) {
+        enemy.velocity.y = -5
+        enemy.jumpCount = 0
+    }
+    // DETECT FOR COLLISION
+    if (
+        player.attackBox.position.x + player.attackBox.width >= enemy.position.x
+        && player.attackBox.position.x <= enemy.position.x + enemy.size.width
+        && player.attackBox.position.y + player.attackBox.height >= enemy.position.y
+        && player.attackBox.position.y <= enemy.position.y + enemy.size.height
+        && player.isAttacking
+    ) {
+        player.isAttacking = false
+        console.log("hit")
+    }
+
+
 
 }
 
@@ -133,6 +196,7 @@ const animate = () => {
     // checking for keys that are pressed to provide exact movement without keys interrupting each other
         // initial all keys have to be false related to pressed
 const keys = {
+    // PLAYER KEYS
     a: {
         pressed: false
     },
@@ -141,29 +205,51 @@ const keys = {
     },
     w: {
         pressed: false
+    },
+    // ENEMY KEYS
+    ArrowLeft: {
+        pressed: false
+    },
+    ArrowRight: {
+        pressed: false
+    },
+    ArrowUp: {
+        pressed: false
     }
 }
-    // includes last pressed key
-let lastKey = undefined
-    // essential for double jump
-let jumpCount = 0
-let doubleJumpTimer = 0
 
 
 
     // checking if any button is pressed ("keydown")
 window.addEventListener("keydown", (event) => {
     switch (event.key) {
+        // PLAYER KEYS
         case "a":
             keys.a.pressed = true
-            lastKey = "a"
+            player.lastKey = "a"
             break
         case "d":
             keys.d.pressed = true
-            lastKey = "d"
+            player.lastKey = "d"
             break
-        case "w":
+        case "w":                   //TODO: adding double jump right here not in loop!!!!
             keys.w.pressed = true
+            break
+        case " ":
+            player.attack()
+            break
+
+        // ENEMY KEYS
+        case "ArrowLeft":
+            keys.ArrowLeft.pressed = true
+            enemy.lastKey = "ArrowLeft"
+            break
+        case "ArrowRight":
+            keys.ArrowRight.pressed = true
+            enemy.lastKey = "ArrowRight"
+            break
+        case "ArrowUp":
+            keys.ArrowUp.pressed = true
             break
     }
     console.log(event.key)
@@ -172,6 +258,7 @@ window.addEventListener("keydown", (event) => {
     // checking if any specific button is not pressed
 window.addEventListener("keyup", (event) => {
     switch (event.key) {
+        // PLAYER KEYS
         case "a":
             keys.a.pressed = false
             break
@@ -180,6 +267,16 @@ window.addEventListener("keyup", (event) => {
             break
         case "w":
             keys.w.pressed = false
+            break
+        // ENEMY KEYS
+        case "ArrowLeft":
+            keys.ArrowLeft.pressed = false
+            break
+        case "ArrowRight":
+            keys.ArrowRight.pressed = false
+            break
+        case "ArrowUp":
+            keys.ArrowUp.pressed = false
             break
     }
     console.log(event.key)
